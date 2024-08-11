@@ -41,7 +41,7 @@ def load_and_index_documents(directory, existing_index=None):
 
 
 # Streamlit app
-st.title("Document Q&A with LlamaIndex, Qdrant, and Ollama")
+st.title("RAGgy")
 
 # Initialize session state for storing the index and uploaded files
 if "index" not in st.session_state:
