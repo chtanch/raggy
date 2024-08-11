@@ -1,0 +1,9 @@
+streamlit
+llama-index
+llama-index-vector-stores-qdrant
+llama-index-llms-ollama
+llama-index-embeddings-ollama
+python-dotenv
+qdrant-client
+huggingface_hub
+sentence_transformers
