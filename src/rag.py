@@ -1,10 +1,6 @@
 import time
 import os
-from llama_index.core import (
-    VectorStoreIndex,
-    SimpleDirectoryReader,
-    ServiceContext,
-)
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
@@ -13,14 +9,8 @@ from qdrant_client import QdrantClient
 # Initialize Qdrant client (local)
 client = QdrantClient(":memory:")
 
-# Initialize Ollama
-llm = Ollama(model="phi3")
-
-# Initialize Ollama embedding model
-embed_model = OllamaEmbedding(model_name="nomic-embed-text")
-
-# Set up ServiceContext
-service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model)
+Settings.llm = Ollama(model="phi3")
+Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
 
 
 def load_and_index_documents(directory, existing_index=None):
@@ -34,9 +24,7 @@ def load_and_index_documents(directory, existing_index=None):
         index = existing_index
     else:
         # Create new index
-        index = VectorStoreIndex.from_documents(
-            documents, service_context=service_context, vector_store=vector_store
-        )
+        index = VectorStoreIndex.from_documents(documents, vector_store=vector_store)
 
     end_time = time.time()
     indexing_time = end_time - start_time
