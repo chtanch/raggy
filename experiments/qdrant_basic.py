@@ -1,6 +1,8 @@
 from qdrant_client import models, QdrantClient
 from sentence_transformers import SentenceTransformer
+import warnings
 
+warnings.filterwarnings("ignore")
 encoder = SentenceTransformer("all-MiniLM-L6-v2")
 
 documents = [
@@ -105,14 +107,14 @@ client.upload_points(
 
 prompt = "alien invasion"
 limit = 3
-print(f"\nPrompt: {prompt}")
+print(f"PROMPT: {prompt}")
 hits = client.query_points(
     collection_name="my_books",
     query=encoder.encode(prompt).tolist(),
     limit=limit,
 ).points
 
-print(f"\nResponse (top {limit}):")
+print(f"RESPONSE (top {limit}):")
 for hit in hits:
     print(hit.payload, "score:", hit.score)
 
@@ -126,6 +128,6 @@ hits = client.query_points(
     limit=1,
 ).points
 
-print(f"\nResponse (filter year >= {year_filter}):")
+print(f"RESPONSE (filter year >= {year_filter}):")
 for hit in hits:
     print(hit.payload, "score:", hit.score)

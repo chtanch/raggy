@@ -1,4 +1,5 @@
 from qdrant_client import QdrantClient, models
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 # VectorDB parameters
 location = ":memory:"
@@ -11,7 +12,17 @@ response_limit = 1
 client = QdrantClient(url="http://localhost:6333")
 
 
-def query_vector_in_group(gid, query_vector):
+def collection_exists(collection_name: str) -> bool:
+    try:
+        client.get_collection(collection_name)
+        return True
+    except UnexpectedResponse as e:
+        if e.status_code == 404:
+            return False
+        raise
+
+
+def query_vector_in_group(gid, query_vector) -> models.QueryResponse:
     search_result = client.query_points(
         collection_name=collection_name,
         query=query_vector,
@@ -28,10 +39,11 @@ def query_vector_in_group(gid, query_vector):
         limit=response_limit,
     ).points
     print(search_result)
+    return search_result
 
 
 def main():
-    if not client.get_collection(collection_name=collection_name):
+    if not collection_exists(collection_name):
         client.create_collection(
             collection_name=collection_name,
             vectors_config=models.VectorParams(
@@ -43,14 +55,14 @@ def main():
             ),
         )
 
-    client.create_payload_index(
-        collection_name=collection_name,
-        field_name=group_id,
-        field_schema=models.KeywordIndexParams(
-            type="keyword",
-            is_tenant=True,
-        ),
-    )
+        client.create_payload_index(
+            collection_name=collection_name,
+            field_name=group_id,
+            field_schema=models.KeywordIndexParams(
+                type="keyword",
+                is_tenant=True,
+            ),
+        )
 
     client.upsert(
         collection_name=collection_name,
@@ -73,8 +85,12 @@ def main():
         ],
     )
 
-    query_vector_in_group("1", [0.9, 0.1, 0.1])
-    query_vector_in_group("2", [0.9, 0.1, 0.1])
+    response1 = query_vector_in_group("1", [0.9, 0.1, 0.1])
+    response2 = query_vector_in_group("2", [0.9, 0.1, 0.1])
+    if response1[0].score > response2[0].score:
+        print("Success!")
+    else:
+        print("Fail!")
 
 
 if __name__ == "__main__":
