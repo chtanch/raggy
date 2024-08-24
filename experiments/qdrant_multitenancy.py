@@ -8,7 +8,7 @@ distance_metric = models.Distance.COSINE
 group_id = "kb_id"
 response_limit = 1
 
-client = QdrantClient(location=location)
+client = QdrantClient(url="http://localhost:6333")
 
 
 def query_vector_in_group(gid, query_vector):
@@ -31,14 +31,17 @@ def query_vector_in_group(gid, query_vector):
 
 
 def main():
-    client.create_collection(
-        collection_name=collection_name,
-        vectors_config=models.VectorParams(size=vector_size, distance=distance_metric),
-        hnsw_config=models.HnswConfigDiff(
-            payload_m=16,
-            m=0,
-        ),
-    )
+    if not client.get_collection(collection_name=collection_name):
+        client.create_collection(
+            collection_name=collection_name,
+            vectors_config=models.VectorParams(
+                size=vector_size, distance=distance_metric
+            ),
+            hnsw_config=models.HnswConfigDiff(
+                payload_m=16,
+                m=0,
+            ),
+        )
 
     client.create_payload_index(
         collection_name=collection_name,

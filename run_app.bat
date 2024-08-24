@@ -4,4 +4,4 @@ if not exist venv (
     exit /b 1
 )
 call venv\Scripts\activate
-streamlit run src\app.py
+streamlit run app\app.py
