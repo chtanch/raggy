@@ -22,24 +22,22 @@ def collection_exists(collection_name: str) -> bool:
         raise
 
 
-def query_vector_in_group(gid, query_vector) -> models.QueryResponse:
-    search_result = client.query_points(
+def query_multiple_kbs(kb_ids, query_vector) -> models.QueryResponse:
+    response = client.query_points(
         collection_name=collection_name,
         query=query_vector,
         query_filter=models.Filter(
             must=[
                 models.FieldCondition(
-                    key=group_id,
-                    match=models.MatchValue(
-                        value=gid,
-                    ),
-                )
+                    key="kb_id",
+                    match=models.MatchAny(any=kb_ids),
+                ),
             ]
         ),
         limit=response_limit,
     ).points
-    print(search_result)
-    return search_result
+    print(response)
+    return response
 
 
 def main():
@@ -66,28 +64,34 @@ def main():
 
     client.upsert(
         collection_name=collection_name,
-        points=[
-            models.PointStruct(
-                id=1,
-                payload={group_id: "1"},
-                vector=[0.9, 0.1, 0.1],
-            ),
-            models.PointStruct(
-                id=2,
-                payload={group_id: "1"},
-                vector=[0.1, 0.9, 0.1],
-            ),
-            models.PointStruct(
-                id=3,
-                payload={group_id: "2"},
-                vector=[0.1, 0.1, 0.9],
-            ),
-        ],
+        points=models.Batch(
+            ids=[1, 2, 3],
+            payloads=[
+                {"kb_id": "kb_1"},
+                {"kb_id": "kb_2"},
+                {"kb_id": "kb_3"},
+            ],
+            vectors=[
+                [0.9, 0.1, 0.1],
+                [0.9, 0.1, 0.1],
+                [0.9, 0.1, 0.1],
+            ],
+        ),
     )
 
-    response1 = query_vector_in_group("1", [0.9, 0.1, 0.1])
-    response2 = query_vector_in_group("2", [0.9, 0.1, 0.1])
-    if response1[0].score > response2[0].score:
+    print(
+        "TEST: Same vector value in multiple KBs. Must return the vector ids associated with the kb_ids being queried."
+    )
+    response = query_multiple_kbs(["kb_2", "kb_3"], [0.9, 0.1, 0.1])
+    success = False
+    for res in response:
+        if res.id in (2, 3) and res.score >= 1.0:
+            success = True
+        else:
+            success = False
+            break
+
+    if success:
         print("Success!")
     else:
         print("Fail!")
