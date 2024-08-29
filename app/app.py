@@ -14,14 +14,12 @@ st.set_page_config(
 st.title("RAGgy, powered by LlamaIndex")
 
 # Hardcode the input file directory as streamlit does not provide full path.
-directory = "C:\\Intel\\raggy\\data\\input\\multi-types"
+directory = "C:\\Intel\\raggy\\data\\multi-types"
 
 uploaded_files = st.file_uploader(
     "Upload documents",
     accept_multiple_files=True,
 )
-
-st.write(uploaded_files)
 
 
 if uploaded_files:
@@ -39,6 +37,7 @@ if uploaded_files:
     for file in uploaded_files:
         input_files.append(os.path.join(directory, file.name))
     docs = rag.load_data(input_files)
+    st.write(docs)
     index = rag.load_index(docs)
 
     if "chat_engine" not in st.session_state.keys():  # Initialize the chat engine
