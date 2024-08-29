@@ -1,7 +1,7 @@
 import streamlit as st
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+import rag
+from llama_index.core import VectorStoreIndex
+import os
 
 st.set_page_config(
     page_title="RAGgy",
@@ -12,55 +12,52 @@ st.set_page_config(
 )
 
 st.title("RAGgy, powered by LlamaIndex")
-input_dir = "./data/input/whitepapers-ai"
 
-if "messages" not in st.session_state.keys():  # Initialize the chat messages history
-    intro = f"Ask me a question about the docs in **{input_dir}**"
-    st.session_state.messages = [
-        {
-            "role": "assistant",
-            "content": intro,
-        }
-    ]
+# Hardcode the input file directory as streamlit does not provide full path.
+directory = "C:\\Intel\\raggy\\data\\input\\multi-types"
 
+uploaded_files = st.file_uploader(
+    "Upload documents",
+    accept_multiple_files=True,
+)
 
-@st.cache_resource(show_spinner=False)
-def load_data():
-    reader = SimpleDirectoryReader(input_dir=input_dir, recursive=True)
-    docs = reader.load_data()
-    Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
-    Settings.llm = Ollama(
-        model="phi3",
-        temperature=0.2,
-        system_prompt="""You are an expert in extracting information from documents. 
-        Keep your answers technical and based on 
-        facts – do not hallucinate features.""",
-    )
-    index = VectorStoreIndex.from_documents(docs)
-    return index
+st.write(uploaded_files)
 
 
-index = load_data()
+if uploaded_files:
+    if (
+        "messages" not in st.session_state.keys()
+    ):  # Initialize the chat messages history
+        intro = f"Ask me a question about the uploaded docs"
+        st.session_state.messages = [
+            {
+                "role": "assistant",
+                "content": intro,
+            }
+        ]
+    input_files = []
+    for file in uploaded_files:
+        input_files.append(os.path.join(directory, file.name))
+    docs = rag.load_data(input_files)
+    index = rag.load_index(docs)
 
-if "chat_engine" not in st.session_state.keys():  # Initialize the chat engine
-    st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode="condense_question", verbose=True, streaming=True
-    )
+    if "chat_engine" not in st.session_state.keys():  # Initialize the chat engine
+        st.session_state.chat_engine = rag.initialize_chat_engine(index)
 
-if prompt := st.chat_input(
-    "Ask a question"
-):  # Prompt for user input and save to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    if prompt := st.chat_input(
+        "Ask a question"
+    ):  # Prompt for user input and save to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-for message in st.session_state.messages:  # Write message history to UI
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+    for message in st.session_state.messages:  # Write message history to UI
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
 
-# If last message is not from assistant, generate a new response
-if st.session_state.messages[-1]["role"] != "assistant":
-    with st.chat_message("assistant"):
-        response_stream = st.session_state.chat_engine.stream_chat(prompt)
-        st.write_stream(response_stream.response_gen)
-        message = {"role": "assistant", "content": response_stream.response}
-        # Add response to message history
-        st.session_state.messages.append(message)
+    # If last message is not from assistant, generate a new response
+    if st.session_state.messages[-1]["role"] != "assistant":
+        with st.chat_message("assistant"):
+            response_stream = st.session_state.chat_engine.stream_chat(prompt)
+            st.write_stream(response_stream.response_gen)
+            message = {"role": "assistant", "content": response_stream.response}
+            # Add response to message history
+            st.session_state.messages.append(message)

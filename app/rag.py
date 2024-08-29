@@ -1,47 +1,54 @@
-import time
-import os
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
-from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
-from qdrant_client import QdrantClient
-
-# Initialize Qdrant client (local)
-client = QdrantClient(":memory:")
-
-Settings.llm = Ollama(model="phi3")
-Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
+import streamlit as st
 
 
-def load_and_index_documents(directory, existing_index=None):
-    start_time = time.time()
-    documents = SimpleDirectoryReader(directory).load_data()
-    vector_store = QdrantVectorStore(client=client, collection_name="documents")
-
-    if existing_index:
-        # Update existing index with new documents
-        existing_index.insert_nodes(documents)
-        index = existing_index
-    else:
-        # Create new index
-        index = VectorStoreIndex.from_documents(documents, vector_store=vector_store)
-
-    end_time = time.time()
-    indexing_time = end_time - start_time
-    return index, indexing_time
+@st.cache_resource(show_spinner=False)
+def load_data(input_files):
+    # reader = SimpleDirectoryReader(input_dir=input_dir, recursive=True)
+    reader = SimpleDirectoryReader(input_files=input_files)
+    docs = reader.load_data()
+    return docs
 
 
-def query_index(index, query):
-    query_start_time = time.time()
-    query_engine = index.as_query_engine()
-    response = query_engine.query(query)
-    query_end_time = time.time()
-    query_time = query_end_time - query_start_time
-    return response.response, query_time
+def load_index(docs):
+    Settings.embed_model = OllamaEmbedding(model_name="nomic-embed-text")
+    Settings.llm = Ollama(
+        model="phi3",
+        temperature=0.2,
+        system_prompt="""You are an expert in extracting information from documents. 
+        Keep your answers technical and based on facts – do not hallucinate features.""",
+    )
+    index = VectorStoreIndex.from_documents(docs)
+    return index
 
 
-def cleanup_directory(directory):
-    if os.path.exists(directory):
-        for file in os.listdir(directory):
-            os.remove(os.path.join(directory, file))
-        os.rmdir(directory)
+def initialize_chat_engine(index):
+    return index.as_chat_engine(
+        chat_mode="condense_question", verbose=True, streaming=True
+    )
+
+
+""" 
+vector_store = index.vector_store
+
+
+def print_embeddings_and_doc_ids(vector_store):
+    # Access the embedding_dict and text_id_to_ref_doc_id
+    embedding_dict = vector_store.data.embedding_dict
+    text_id_to_ref_doc_id = vector_store.data.text_id_to_ref_doc_id
+
+    # Iterate through the embedding_dict
+    for text_id, embedding in embedding_dict.items():
+        # Get the corresponding doc_id
+        doc_id = text_id_to_ref_doc_id.get(text_id, "Unknown")
+
+        # Print the embedding and doc_id
+        st.write(f"Doc ID: {doc_id}")
+        st.write(f"Embedding: {embedding}")
+        st.write("-" * 50)
+
+
+print_embeddings_and_doc_ids(vector_store)
+"""
