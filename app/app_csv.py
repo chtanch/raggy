@@ -10,6 +10,7 @@ from llama_index.experimental.query_engine.pandas import (
     PandasInstructionParser,
 )
 from llama_index.core import PromptTemplate
+import json
 
 
 def main():
@@ -88,7 +89,7 @@ def main():
         if st.button("Submit Query"):
             response = qp.run(query_str=query_str)
             st.write("**Response:**")
-            st.write(response)
+            st.write(response.message.content)
 
 
 if __name__ == "__main__":
