@@ -6,3 +6,4 @@ if not exist venv (
 call venv\Scripts\activate
 python experiments\qdrant_basic.py
 python experiments\qdrant_multitenancy.py
+python experiments\query_csv.py
