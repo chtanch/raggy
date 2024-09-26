@@ -12,7 +12,7 @@ import pandas as pd
 
 
 def main():
-    df = pd.read_csv("data\\multi-types\\titanic_train.csv")
+    df = pd.read_csv("data\\multi-types\\retail_transactions.csv")
 
     instruction_str = (
         "1. Convert the query to executable Python code using Pandas.\n"
@@ -46,9 +46,8 @@ def main():
     pandas_output_parser = PandasInstructionParser(df)
     response_synthesis_prompt = PromptTemplate(response_synthesis_prompt_str)
     llm = Ollama(
-        model="phi3",
+        model="llama3",
     )
-    # llm = OpenAI(model="gpt-3.5-turbo")
 
     qp = QP(
         modules={
@@ -75,10 +74,10 @@ def main():
     )
     # add link from response synthesis prompt to llm2
     qp.add_link("response_synthesis_prompt", "llm2")
-    response = qp.run(
-        query_str="What is the correlation between survival and age?",
-    )
-    print(response)
+
+    query_str = "What is the total PurchasePrice?"
+    response = qp.run(query_str=query_str)
+    print(f"Response:\n{response.message.content}")
 
 
 if __name__ == "__main__":
