@@ -14,7 +14,7 @@ import json
 
 
 def main():
-    st.title("Chat with your CSV")
+    st.title("Query CSV using Text-To-Pandas")
 
     uploaded_file = st.file_uploader("**Upload a CSV file**", type="csv")
 
@@ -84,9 +84,9 @@ def main():
         )
         qp.add_link("response_synthesis_prompt", "llm2")
 
-        query_str = st.text_input("**Enter your question about the dataset**")
+        query_str = st.text_input("**Enter your question:**")
 
-        if st.button("Submit Query"):
+        if query_str:
             response = qp.run(query_str=query_str)
             st.write("**Response:**")
             st.write(response.message.content)
