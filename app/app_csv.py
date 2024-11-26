@@ -16,10 +16,12 @@ import json
 def main():
     st.title("Query CSV using Text-To-Pandas")
 
-    uploaded_file = st.file_uploader("**Upload a CSV file**", type="csv")
+    # uploaded_file = st.file_uploader("**Upload a CSV file**", type="csv")
+    uploaded_file = "./data/job_descriptions.xlsx"
 
     if uploaded_file:
-        df = pd.read_csv(uploaded_file)
+        # df = pd.read_csv(uploaded_file)
+        df = pd.read_excel("./data/job_descriptions.xlsx")
         st.write("**Data preview:**")
         st.write(df.head())
 
